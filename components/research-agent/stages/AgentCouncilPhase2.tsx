@@ -229,14 +229,8 @@ export default function AgentCouncilPhase2({ query }: AgentCouncilPhase2Props) {
                 className="p-5 bg-white rounded-lg"
                 style={{ borderLeft: `4px solid ${COLOR}`, boxShadow: `inset 0 1px 0 ${COLOR}55, inset 0 -1px 0 ${COLOR}55` }}
               >
-                <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-start mb-2">
                   <h3 className="text-sm font-semibold text-foreground leading-snug">{exp.title}</h3>
-                  <span
-                    className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0"
-                    style={{ background: `${COLOR}18`, color: COLOR }}
-                  >
-                    P{exp.priority_score}
-                  </span>
                 </div>
                 <p className="text-xs text-textTertiary italic mb-3">"{exp.hypothesis}"</p>
                 <div className="space-y-2 text-xs text-textSecondary">

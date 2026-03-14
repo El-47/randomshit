@@ -137,7 +137,7 @@ export default function TimelineSidebar({
       <div className="border-b border-border/70 px-4 py-4">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-sm font-semibold text-foreground transition-colors hover:text-primary"
+          className="flex items-center gap-2 text-sm font-semibold text-foreground transition-all hover:text-black hover:scale-[1.02] cursor-pointer"
         >
           <ChevronLeft size={16} />
           Back to Landing

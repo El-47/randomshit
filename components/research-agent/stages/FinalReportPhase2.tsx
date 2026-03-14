@@ -11,7 +11,7 @@ interface FinalReportPhase2Props {
 
 export default function FinalReportPhase2({ query }: FinalReportPhase2Props) {
   return (
-    <div className="space-y-8 max-w-3xl">
+    <div className="space-y-8">
       {/* Summary Stats */}
       <div className="grid grid-cols-4 gap-4">
         <StatCard label="Report Generated" value="✓" color="#43A047" />
