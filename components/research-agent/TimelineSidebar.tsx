@@ -128,7 +128,6 @@ export default function TimelineSidebar({
   onBack,
   stageStatuses,
 }: TimelineSidebarProps) {
-  const completedCount = Object.values(stageStatuses).filter((status) => status === 'complete').length;
   const activeStageData = mockStages.find((stage) => stage.id === activeStage);
 
   const content = (
@@ -149,10 +148,6 @@ export default function TimelineSidebar({
             <div>
               <p className="text-lg font-semibold text-foreground">Explore pipeline</p>
               <p className="text-sm text-textSecondary">Review each stage output in sequence</p>
-            </div>
-            <div className="rounded-xl bg-primary/10 px-3 py-2 text-right">
-              <p className="text-xs text-textSecondary">Completed</p>
-              <p className="text-base font-semibold text-primary">{completedCount}/{mockStages.length}</p>
             </div>
           </div>
         </div>

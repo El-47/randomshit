@@ -1,49 +1,24 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { animateCounter, animatePulse } from '@/utils/animations';
+import { CrawlApiPaper, CrawlApiResponse, ResearchQuery } from '@/utils/types';
 
-interface ApiPaper {
-  abstract?: string;
-  methodology?: string;
-  results?: string;
-  conclusion?: string;
+interface NLPProcessorProps {
+  query: ResearchQuery;
+  apiData?: CrawlApiResponse | null;
+  isLoading?: boolean;
 }
 
-interface ApiResponse {
-  aggregated_extraction?: {
-    papers?: ApiPaper[];
-  };
-}
-
-export default function NLPProcessor() {
+export default function NLPProcessor({ query, apiData, isLoading = false }: NLPProcessorProps) {
   const countRef = useRef<HTMLSpanElement>(null);
   const brainRef = useRef<HTMLDivElement>(null);
-  const [apiData, setApiData] = useState<ApiResponse | null>(null);
-
-  useEffect(() => {
-    const loadNlpData = async () => {
-      try {
-        const response = await fetch('/api/research');
-        if (!response.ok) {
-          throw new Error('Failed to fetch NLP data');
-        }
-
-        const data = await response.json();
-        setApiData(data);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    loadNlpData();
-  }, []);
 
   const tasks = useMemo(() => {
     const papers = apiData?.aggregated_extraction?.papers ?? [];
     const total = papers.length || 1;
 
-    const getProgress = (field: keyof ApiPaper) => (
+    const getProgress = (field: keyof CrawlApiPaper) => (
       Math.round((papers.filter((paper) => (paper[field] ?? '').trim().length > 0).length / total) * 100)
     );
 
@@ -60,7 +35,7 @@ export default function NLPProcessor() {
 
     return papers.reduce((count, paper) => {
       return count + ['abstract', 'methodology', 'results', 'conclusion'].filter((field) => {
-        const value = paper[field as keyof ApiPaper];
+        const value = paper[field as keyof CrawlApiPaper];
         return typeof value === 'string' && value.trim().length > 0;
       }).length;
     }, 0);
@@ -105,7 +80,7 @@ export default function NLPProcessor() {
       </div>
 
       <div className="text-xs text-textTertiary italic">
-        Processing pipeline active...
+        {isLoading ? 'Loading extracted sections...' : 'Processing pipeline active...'}
       </div>
     </div>
   );

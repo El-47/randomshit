@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ResearchQuery } from '@/utils/types';
+import { CrawlApiResponse, ResearchQuery } from '@/utils/types';
 
 interface GlobalClaimSummary {
   paper_id: string;
@@ -78,21 +78,70 @@ const GAP_TYPE_LABEL: Record<string, string> = {
 
 interface AgentCouncilPhase2Props {
   query: ResearchQuery;
+  apiData?: CrawlApiResponse | null;
+  isLoading?: boolean;
 }
 
-export default function AgentCouncilPhase2({ query }: AgentCouncilPhase2Props) {
+export default function AgentCouncilPhase2({ query, apiData, isLoading = false }: AgentCouncilPhase2Props) {
   const [data, setData] = useState<AgentCouncilData | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/agent-council')
-      .then((r) => r.json())
-      .then((json: AgentCouncilData) => setData(json));
-  }, []);
+    if (!apiData) {
+      return;
+    }
+
+    const runAgentCouncil = async () => {
+      try {
+        setIsAnalyzing(true);
+        setErrorMessage(null);
+
+        const response = await fetch('/api/agent-council', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(apiData),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch agent council analysis');
+        }
+
+        const json = await response.json();
+        setData(json as AgentCouncilData);
+      } catch (error) {
+        console.error(error);
+        setErrorMessage('Failed to load agent analysis.');
+      } finally {
+        setIsAnalyzing(false);
+      }
+    };
+
+    runAgentCouncil();
+  }, [apiData]);
+
+  if (isLoading || isAnalyzing || !apiData) {
+    return (
+      <div className="flex items-center justify-center h-48 text-textTertiary text-sm">
+        Loading analysis…
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <div className="flex items-center justify-center h-48 text-red-500 text-sm">
+        {errorMessage}
+      </div>
+    );
+  }
 
   if (!data) {
     return (
       <div className="flex items-center justify-center h-48 text-textTertiary text-sm">
-        Loading analysis…
+        No analysis data found.
       </div>
     );
   }

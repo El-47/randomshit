@@ -1,13 +1,16 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { AppState, ResearchQuery, StageType } from '@/utils/types';
+import React, { useState, useCallback, useRef } from 'react';
+import { AppState, CrawlApiResponse, StageType } from '@/utils/types';
 import LandingPage from './LandingPage';
 import ProcessingPhase from './ProcessingPhase';
 import ExplorePhase from './ExplorePhase';
-import { mockStages } from '@/utils/mockData';
 
 export default function ResearchAgent() {
+  const [crawlData, setCrawlData] = useState<CrawlApiResponse | null>(null);
+  const [isCrawlLoading, setIsCrawlLoading] = useState(false);
+  const crawlRequestIdRef = useRef(0);
+
   const [appState, setAppState] = useState<AppState>({
     phase: 'landing',
     activeStage: null,
@@ -25,6 +28,72 @@ export default function ResearchAgent() {
   });
 
   const handleStartResearch = useCallback((query: string, keywords: string[]) => {
+    const payload = {
+      question: query.trim(),
+      topic_count: 4,
+      max_papers: 3,
+    };
+
+    const requestId = Date.now();
+    crawlRequestIdRef.current = requestId;
+
+    setCrawlData(null);
+    setIsCrawlLoading(true);
+
+    console.info('Calling crawl API:', payload);
+
+    const wait = (ms: number) => new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+
+    const fetchUntilSuccess = async () => {
+      let attempt = 0;
+
+      while (crawlRequestIdRef.current === requestId) {
+        attempt += 1;
+
+        try {
+          const response = await fetch('http://164.52.193.157/crawl', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+
+          console.info(`Crawl API response status (attempt ${attempt}):`, response.status);
+
+          if (response.status === 200) {
+            const data = await response.json();
+
+            if (crawlRequestIdRef.current !== requestId) {
+              return;
+            }
+
+            setCrawlData(data);
+            setIsCrawlLoading(false);
+            setAppState((prev) => ({
+              ...prev,
+              phase: 'explore',
+              allStagesComplete: true,
+              activeStage: 'crawler',
+            }));
+            return;
+          }
+        } catch (error) {
+          console.error(`Crawl API request failed (attempt ${attempt}):`, error);
+        }
+
+        if (crawlRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        await wait(2500);
+      }
+    };
+
+    void fetchUntilSuccess();
+
     setAppState((prev) => ({
       ...prev,
       phase: 'processing',
@@ -51,15 +120,6 @@ export default function ResearchAgent() {
     }));
   }, []);
 
-  const handleAllStagesComplete = useCallback(() => {
-    setAppState((prev) => ({
-      ...prev,
-      phase: 'explore',
-      allStagesComplete: true,
-      activeStage: 'crawler',
-    }));
-  }, []);
-
   const handleSelectStage = useCallback((stageId: StageType) => {
     setAppState((prev) => ({
       ...prev,
@@ -68,6 +128,10 @@ export default function ResearchAgent() {
   }, []);
 
   const handleBack = useCallback(() => {
+    crawlRequestIdRef.current += 1;
+    setCrawlData(null);
+    setIsCrawlLoading(false);
+
     setAppState({
       phase: 'landing',
       activeStage: null,
@@ -94,8 +158,9 @@ export default function ResearchAgent() {
     return (
       <ProcessingPhase
         query={appState.query!}
+        crawlData={crawlData}
+        isCrawlLoading={isCrawlLoading}
         onStageComplete={handleStageComplete}
-        onAllStagesComplete={handleAllStagesComplete}
         stageStatuses={appState.stageStatuses}
       />
     );
@@ -105,6 +170,8 @@ export default function ResearchAgent() {
     return (
       <ExplorePhase
         query={appState.query!}
+        crawlData={crawlData}
+        isCrawlLoading={isCrawlLoading}
         activeStage={appState.activeStage!}
         onSelectStage={handleSelectStage}
         onBack={handleBack}

@@ -1,57 +1,20 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { ResearchQuery } from '@/utils/types';
+import React, { useMemo, useState } from 'react';
+import { CrawlApiPaper, CrawlApiResponse, ResearchQuery } from '@/utils/types';
 
 interface NLPPhase2Props {
   query: ResearchQuery;
+  apiData?: CrawlApiResponse | null;
+  isLoading?: boolean;
 }
 
 type TabType = 'abstract' | 'introduction' | 'methodology' | 'results' | 'conclusion';
 
-interface ApiPaper {
-  paper_id: string;
-  title: string;
-  abstract?: string;
-  introduction?: string;
-  methodology?: string;
-  results?: string;
-  conclusion?: string;
-}
-
-interface ApiResponse {
-  aggregated_extraction?: {
-    processed_count?: number;
-    papers?: ApiPaper[];
-  };
-}
-
-export default function NLPPhase2({ query }: NLPPhase2Props) {
+export default function NLPPhase2({ query, apiData, isLoading = false }: NLPPhase2Props) {
   const [activeTab, setActiveTab] = useState<TabType>('abstract');
-  const [apiData, setApiData] = useState<ApiResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const loadNlpData = async () => {
-      try {
-        const response = await fetch('/api/research');
-        if (!response.ok) {
-          throw new Error('Failed to fetch NLP data');
-        }
-
-        const data = await response.json();
-        setApiData(data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadNlpData();
-  }, []);
-
-  const tabs: { id: TabType; label: string; key: keyof ApiPaper }[] = [
+  const tabs: { id: TabType; label: string; key: keyof CrawlApiPaper }[] = [
     { id: 'abstract', label: 'Abstracts', key: 'abstract' },
     { id: 'introduction', label: 'Introduction', key: 'introduction' },
     { id: 'methodology', label: 'Methodology', key: 'methodology' },
@@ -64,7 +27,7 @@ export default function NLPPhase2({ query }: NLPPhase2Props) {
   const extractedSections = useMemo(() => {
     return papers.reduce((count, paper) => {
       return count + ['abstract', 'introduction', 'methodology', 'results', 'conclusion'].filter((field) => {
-        const value = paper[field as keyof ApiPaper];
+        const value = paper[field as keyof CrawlApiPaper];
         return typeof value === 'string' && value.trim().length > 0;
       }).length;
     }, 0);

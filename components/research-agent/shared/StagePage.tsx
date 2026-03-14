@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Suspense } from 'react';
-import { StageType, ResearchQuery } from '@/utils/types';
+import { CrawlApiResponse, StageType, ResearchQuery } from '@/utils/types';
 import { mockStages } from '@/utils/mockData';
 import CrawlerPhase2 from '../stages/CrawlerPhase2';
 import NLPPhase2 from '../stages/NLPPhase2';
@@ -14,6 +14,8 @@ import ExecutionTrailPhase2 from '../stages/ExecutionTrailPhase2';
 interface StagePageProps {
   stageId: StageType;
   query: ResearchQuery;
+  crawlData: CrawlApiResponse | null;
+  isCrawlLoading: boolean;
 }
 
 function StageGlyph({ stageId }: { stageId: StageType }) {
@@ -128,7 +130,7 @@ const phaseComponents: Record<StageType, React.ComponentType<{ query: ResearchQu
   trail: ExecutionTrailPhase2,
 };
 
-export default function StagePage({ stageId, query }: StagePageProps) {
+export default function StagePage({ stageId, query, crawlData, isCrawlLoading }: StagePageProps) {
   const stage = mockStages.find((s) => s.id === stageId);
   const Component = phaseComponents[stageId];
 
@@ -150,7 +152,7 @@ export default function StagePage({ stageId, query }: StagePageProps) {
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-8 py-6">
         <Suspense fallback={<div className="text-center py-12">Loading...</div>}>
-          <Component query={query} />
+          <Component query={query} apiData={crawlData} isLoading={isCrawlLoading} />
         </Suspense>
       </div>
     </div>

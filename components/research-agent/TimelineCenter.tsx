@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { StageType } from '@/utils/types';
+import React from 'react';
+import { CrawlApiResponse, ResearchQuery, StageType } from '@/utils/types';
 import { mockStages } from '@/utils/mockData';
 import TimelineNode from './shared/TimelineNode';
 import Crawler from './stages/Crawler';
@@ -13,12 +13,21 @@ import FinalReport from './stages/FinalReport';
 import ExecutionTrail from './stages/ExecutionTrail';
 
 interface TimelineCenterProps {
+  query: ResearchQuery;
+  crawlData: CrawlApiResponse | null;
+  isCrawlLoading: boolean;
   completedStages: StageType[];
   allComplete: boolean;
 }
 
-export default function TimelineCenter({ completedStages, allComplete }: TimelineCenterProps) {
-  const stageComponents: Record<StageType, React.ComponentType> = {
+export default function TimelineCenter({
+  query,
+  crawlData,
+  isCrawlLoading,
+  completedStages,
+  allComplete,
+}: TimelineCenterProps) {
+  const stageComponents: Record<StageType, React.ComponentType<any>> = {
     crawler: Crawler,
     nlp: NLPProcessor,
     agents: AgentCouncil,
@@ -31,9 +40,6 @@ export default function TimelineCenter({ completedStages, allComplete }: Timelin
   const activeStageIndex = completedStages.length;
   const activeStageId = mockStages[activeStageIndex]?.id as StageType | undefined;
   const ActiveComponent = activeStageId ? stageComponents[activeStageId] : null;
-
-  // Get stage order
-  const stageOrder: StageType[] = ['crawler', 'nlp', 'agents', 'graph', 'rag', 'report', 'trail'];
 
   return (
     <div className="w-full">
@@ -54,7 +60,7 @@ export default function TimelineCenter({ completedStages, allComplete }: Timelin
         {/* Active Stage Component */}
         {ActiveComponent && (
           <div className="w-full max-w-2xl mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200 animate-fadeIn">
-            <ActiveComponent />
+            <ActiveComponent query={query} apiData={crawlData} isLoading={isCrawlLoading} />
           </div>
         )}
       </div>

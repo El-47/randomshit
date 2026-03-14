@@ -1,12 +1,14 @@
 'use client';
 
 import React from 'react';
-import { ResearchQuery, StageType, StageStatus } from '@/utils/types';
+import { CrawlApiResponse, ResearchQuery, StageType, StageStatus } from '@/utils/types';
 import TimelineSidebar from './TimelineSidebar';
 import StagePage from './shared/StagePage';
 
 interface ExplorePhaseProps {
   query: ResearchQuery;
+  crawlData: CrawlApiResponse | null;
+  isCrawlLoading: boolean;
   activeStage: StageType;
   onSelectStage: (stageId: StageType) => void;
   onBack: () => void;
@@ -15,6 +17,8 @@ interface ExplorePhaseProps {
 
 export default function ExplorePhase({
   query,
+  crawlData,
+  isCrawlLoading,
   activeStage,
   onSelectStage,
   onBack,
@@ -35,6 +39,8 @@ export default function ExplorePhase({
         <StagePage
           stageId={activeStage}
           query={query}
+          crawlData={crawlData}
+          isCrawlLoading={isCrawlLoading}
         />
       </div>
     </div>

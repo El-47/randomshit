@@ -77,6 +77,27 @@ export interface ResearchQuery {
   keywords: string[];
 }
 
+export interface CrawlApiPaper {
+  paper_id: string;
+  title?: string;
+  topic?: string;
+  abstract?: string;
+  introduction?: string;
+  methodology?: string;
+  results?: string;
+  conclusion?: string;
+}
+
+export interface CrawlApiResponse {
+  query?: string;
+  discovered?: number;
+  saved?: number;
+  aggregated_extraction?: {
+    processed_count?: number;
+    papers?: CrawlApiPaper[];
+  };
+}
+
 export interface Phase1Data {
   papersFound: number;
   sectionsExtracted: number;

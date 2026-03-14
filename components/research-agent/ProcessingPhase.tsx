@@ -1,60 +1,48 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ResearchQuery, StageType, StageStatus } from '@/utils/types';
-import { mockStages } from '@/utils/mockData';
+import { CrawlApiResponse, ResearchQuery, StageType, StageStatus } from '@/utils/types';
 import TimelineCenter from './TimelineCenter';
 import { animateTimelineCollapse } from '@/utils/animations';
-import gsap from 'gsap';
 
 interface ProcessingPhaseProps {
   query: ResearchQuery;
+  crawlData: CrawlApiResponse | null;
+  isCrawlLoading: boolean;
   onStageComplete: (stageId: StageType) => void;
-  onAllStagesComplete: () => void;
   stageStatuses: Record<StageType, StageStatus>;
 }
 
 export default function ProcessingPhase({
   query,
+  crawlData,
+  isCrawlLoading,
   onStageComplete,
-  onAllStagesComplete,
   stageStatuses,
 }: ProcessingPhaseProps) {
   const [completedStages, setCompletedStages] = useState<StageType[]>([]);
   const [allComplete, setAllComplete] = useState(false);
   const timelineRef = useRef<HTMLDivElement>(null);
 
-  // Simulate stage progression
+  // Simulate stage progression once, then hold on last stage while waiting for API success
   useEffect(() => {
-    const stageIds: StageType[] = ['crawler', 'nlp', 'agents', 'graph', 'rag', 'report', 'trail'];
-    const delays = [0, 3000, 6500, 10000, 13500, 17000, 20500];
+    const stageIds: StageType[] = ['crawler', 'nlp', 'agents', 'graph', 'rag', 'report'];
+    const delays = [0, 3000, 6000, 9000, 13500, 17000];
 
-    const timers = stageIds.map((stageId, index) => {
+    setCompletedStages([]);
+    setAllComplete(false);
+
+    const timerIds = stageIds.map((stageId, index) => {
       return setTimeout(() => {
         onStageComplete(stageId);
         setCompletedStages((prev) => [...prev, stageId]);
       }, delays[index]);
     });
 
-    // After all stages complete, trigger transition
-    const finalTimer = setTimeout(() => {
-      setAllComplete(true);
-      // Trigger animation collapse after a brief delay
-      setTimeout(() => {
-        if (timelineRef.current) {
-          animateTimelineCollapse(timelineRef.current, 0.8);
-        }
-        setTimeout(() => {
-          onAllStagesComplete();
-        }, 900);
-      }, 500);
-    }, delays[delays.length - 1] + 1000);
-
     return () => {
-      timers.forEach((timer) => clearTimeout(timer));
-      clearTimeout(finalTimer);
+      timerIds.forEach((timerId) => clearTimeout(timerId));
     };
-  }, [onStageComplete, onAllStagesComplete]);
+  }, [onStageComplete]);
 
   return (
     <div className="relative min-h-screen bg-muted bg-linear-to-br from-primary/20 via-chart-1/10 to-chart-2/20 flex flex-col items-center justify-center px-4 py-12 overflow-hidden">
@@ -79,13 +67,20 @@ export default function ProcessingPhase({
 
         {/* Timeline */}
         <div ref={timelineRef} className="flex justify-center">
-          <TimelineCenter completedStages={completedStages} allComplete={allComplete} />
+          <TimelineCenter
+            query={query}
+            crawlData={crawlData}
+            isCrawlLoading={isCrawlLoading}
+            completedStages={completedStages}
+            allComplete={allComplete}
+          />
         </div>
 
         {/* Status Footer */}
         <div className="mt-12 text-center text-sm text-textTertiary">
-          <p>Processing stage {completedStages.length + 1} of 7...</p>
-          {allComplete && <p className="mt-2 text-green-600 font-semibold">Research complete. Transitioning...</p>}
+          <p>Processing stage {Math.min(completedStages.length + 1, 7)} of 7...</p>
+          {isCrawlLoading && <p className="mt-2">Waiting for crawl API 200 OK response...</p>}
+          {allComplete && !isCrawlLoading && <p className="mt-2 text-green-600 font-semibold">Research complete. Transitioning...</p>}
         </div>
       </div>
     </div>

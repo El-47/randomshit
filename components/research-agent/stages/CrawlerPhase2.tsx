@@ -1,52 +1,17 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { ResearchQuery } from '@/utils/types';
+import React, { useEffect, useRef } from 'react';
+import { CrawlApiResponse, ResearchQuery } from '@/utils/types';
 import { animateGridStagger } from '@/utils/animations';
 
 interface CrawlerPhase2Props {
   query: ResearchQuery;
+  apiData?: CrawlApiResponse | null;
+  isLoading?: boolean;
 }
 
-interface ApiPaper {
-  paper_id: string;
-  title: string;
-  topic: string;
-  abstract: string;
-}
-
-interface ApiResponse {
-  discovered: number;
-  saved: number;
-  aggregated_extraction?: {
-    papers?: ApiPaper[];
-  };
-}
-
-export default function CrawlerPhase2({ query }: CrawlerPhase2Props) {
+export default function CrawlerPhase2({ query, apiData, isLoading = false }: CrawlerPhase2Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [apiData, setApiData] = useState<ApiResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const loadCrawlerData = async () => {
-      try {
-        const response = await fetch('/api/research');
-        if (!response.ok) {
-          throw new Error('Failed to fetch crawler data');
-        }
-
-        const data = await response.json();
-        setApiData(data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadCrawlerData();
-  }, []);
 
   useEffect(() => {
     if (containerRef.current && apiData?.aggregated_extraction?.papers?.length) {
