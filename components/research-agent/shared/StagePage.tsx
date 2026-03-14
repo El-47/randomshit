@@ -120,7 +120,13 @@ function StageIcon({ stageId, color }: { stageId: StageType; color: string }) {
   );
 }
 
-const phaseComponents: Record<StageType, React.ComponentType<{ query: ResearchQuery }>> = {
+interface PhaseComponentProps {
+  query: ResearchQuery;
+  apiData?: CrawlApiResponse | null;
+  isLoading?: boolean;
+}
+
+const phaseComponents: Record<StageType, React.ComponentType<PhaseComponentProps>> = {
   crawler: CrawlerPhase2,
   nlp: NLPPhase2,
   agents: AgentCouncilPhase2,

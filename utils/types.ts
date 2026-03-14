@@ -86,6 +86,9 @@ export interface CrawlApiPaper {
   methodology?: string;
   results?: string;
   conclusion?: string;
+  claims?: string[];
+  datasets?: string[];
+  figures?: { figure_id?: string; caption?: string; summary?: string }[];
 }
 
 export interface CrawlApiResponse {

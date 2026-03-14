@@ -97,7 +97,7 @@ export default function AgentCouncilPhase2({ query, apiData, isLoading = false }
         setIsAnalyzing(true);
         setErrorMessage(null);
 
-        const response = await fetch('/api/agent-council', {
+        const response = await fetch('http://164.52.193.157/analyze', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -111,6 +111,13 @@ export default function AgentCouncilPhase2({ query, apiData, isLoading = false }
 
         const json = await response.json();
         setData(json as AgentCouncilData);
+
+        // Persist for RAG ingest to pick up
+        try {
+          localStorage.setItem('agent-council-data', JSON.stringify(json));
+        } catch {
+          // Ignore storage errors
+        }
       } catch (error) {
         console.error(error);
         setErrorMessage('Failed to load agent analysis.');

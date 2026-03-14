@@ -18,9 +18,13 @@ export default function NLPProcessor({ query, apiData, isLoading = false }: NLPP
     const papers = apiData?.aggregated_extraction?.papers ?? [];
     const total = papers.length || 1;
 
-    const getProgress = (field: keyof CrawlApiPaper) => (
-      Math.round((papers.filter((paper) => (paper[field] ?? '').trim().length > 0).length / total) * 100)
-    );
+    const getProgress = (field: keyof CrawlApiPaper) => {
+      const count = papers.filter((paper) => {
+        const value = paper[field];
+        return typeof value === 'string' && value.trim().length > 0;
+      }).length;
+      return Math.round((count / total) * 100);
+    };
 
     return [
       { label: 'Abstract Extraction', progress: getProgress('abstract') },

@@ -1,46 +1,51 @@
 'use client';
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { AppState, CrawlApiResponse, StageType } from '@/utils/types';
 import LandingPage from './LandingPage';
 import ProcessingPhase from './ProcessingPhase';
 import ExplorePhase from './ExplorePhase';
 
+const SESSION_STORAGE_KEY = 'research-agent-session-v1';
+
+const initialStageStatuses: AppState['stageStatuses'] = {
+  crawler: 'pending',
+  nlp: 'pending',
+  agents: 'pending',
+  graph: 'pending',
+  rag: 'pending',
+  report: 'pending',
+  trail: 'pending',
+};
+
+const initialAppState: AppState = {
+  phase: 'landing',
+  activeStage: null,
+  query: null,
+  stageStatuses: initialStageStatuses,
+  allStagesComplete: false,
+};
+
+interface PersistedResearchAgentState {
+  appState: AppState;
+  crawlData: CrawlApiResponse | null;
+  isCrawlLoading: boolean;
+}
+
 export default function ResearchAgent() {
   const [crawlData, setCrawlData] = useState<CrawlApiResponse | null>(null);
   const [isCrawlLoading, setIsCrawlLoading] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const crawlRequestIdRef = useRef(0);
 
-  const [appState, setAppState] = useState<AppState>({
-    phase: 'landing',
-    activeStage: null,
-    query: null,
-    stageStatuses: {
-      crawler: 'pending',
-      nlp: 'pending',
-      agents: 'pending',
-      graph: 'pending',
-      rag: 'pending',
-      report: 'pending',
-      trail: 'pending',
-    },
-    allStagesComplete: false,
-  });
+  const [appState, setAppState] = useState<AppState>(initialAppState);
 
-  const handleStartResearch = useCallback((query: string, keywords: string[]) => {
+  const runCrawlRequestUntilSuccess = useCallback((question: string, requestId: number) => {
     const payload = {
-      question: query.trim(),
+      question: question.trim(),
       topic_count: 4,
       max_papers: 3,
     };
-
-    const requestId = Date.now();
-    crawlRequestIdRef.current = requestId;
-
-    setCrawlData(null);
-    setIsCrawlLoading(true);
-
-    console.info('Calling crawl API:', payload);
 
     const wait = (ms: number) => new Promise((resolve) => {
       setTimeout(resolve, ms);
@@ -76,7 +81,7 @@ export default function ResearchAgent() {
               ...prev,
               phase: 'explore',
               allStagesComplete: true,
-              activeStage: 'crawler',
+              activeStage: prev.activeStage ?? 'crawler',
             }));
             return;
           }
@@ -93,22 +98,75 @@ export default function ResearchAgent() {
     };
 
     void fetchUntilSuccess();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      const raw = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
+
+      if (!raw) {
+        setIsHydrated(true);
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as PersistedResearchAgentState;
+
+      if (parsed?.appState) {
+        setAppState(parsed.appState);
+      }
+
+      if (parsed?.crawlData) {
+        setCrawlData(parsed.crawlData);
+      }
+
+      setIsCrawlLoading(Boolean(parsed?.isCrawlLoading));
+
+      if (parsed?.isCrawlLoading && parsed?.appState?.query?.question && !parsed?.crawlData) {
+        const requestId = Date.now();
+        crawlRequestIdRef.current = requestId;
+        runCrawlRequestUntilSuccess(parsed.appState.query.question, requestId);
+      }
+    } catch (error) {
+      console.error('Failed to restore research session state:', error);
+    } finally {
+      setIsHydrated(true);
+    }
+  }, [runCrawlRequestUntilSuccess]);
+
+  useEffect(() => {
+    if (!isHydrated || typeof window === 'undefined') {
+      return;
+    }
+
+    const payload: PersistedResearchAgentState = {
+      appState,
+      crawlData,
+      isCrawlLoading,
+    };
+
+    window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
+  }, [appState, crawlData, isCrawlLoading, isHydrated]);
+
+  const handleStartResearch = useCallback((query: string, keywords: string[]) => {
+    const requestId = Date.now();
+    crawlRequestIdRef.current = requestId;
+
+    setCrawlData(null);
+    setIsCrawlLoading(true);
+
+    runCrawlRequestUntilSuccess(query, requestId);
 
     setAppState((prev) => ({
       ...prev,
       phase: 'processing',
       query: { question: query, keywords },
-      stageStatuses: {
-        crawler: 'pending',
-        nlp: 'pending',
-        agents: 'pending',
-        graph: 'pending',
-        rag: 'pending',
-        report: 'pending',
-        trail: 'pending',
-      },
+      stageStatuses: initialStageStatuses,
     }));
-  }, []);
+  }, [runCrawlRequestUntilSuccess]);
 
   const handleStageComplete = useCallback((stageId: StageType) => {
     setAppState((prev) => ({
@@ -129,25 +187,20 @@ export default function ResearchAgent() {
 
   const handleBack = useCallback(() => {
     crawlRequestIdRef.current += 1;
+
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+
     setCrawlData(null);
     setIsCrawlLoading(false);
 
-    setAppState({
-      phase: 'landing',
-      activeStage: null,
-      query: null,
-      stageStatuses: {
-        crawler: 'pending',
-        nlp: 'pending',
-        agents: 'pending',
-        graph: 'pending',
-        rag: 'pending',
-        report: 'pending',
-        trail: 'pending',
-      },
-      allStagesComplete: false,
-    });
+    setAppState(initialAppState);
   }, []);
+
+  if (!isHydrated) {
+    return null;
+  }
 
   // Render based on current phase
   if (appState.phase === 'landing') {
