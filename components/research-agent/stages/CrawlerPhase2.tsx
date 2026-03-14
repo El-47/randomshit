@@ -55,6 +55,29 @@ export default function CrawlerPhase2({ query, apiData, isLoading = false }: Cra
               <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">{paper.topic || query.question}</span>
             </div>
             <p className="text-xs text-textTertiary mb-3 line-clamp-4">{paper.abstract}</p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                const sessionId = "mindmap_" + paper.paper_id
+                localStorage.setItem("mindmap_session_id", sessionId)
+                localStorage.setItem("mindmap_paper", JSON.stringify({
+                  paper_id: paper.paper_id,
+                  title: paper.title ?? "",
+                  abstract: paper.abstract ?? "",
+                  methodology: paper.methodology ?? "",
+                  results: paper.results ?? "",
+                  conclusion: paper.conclusion ?? "",
+                  claims: Array.isArray(paper.claims) ? paper.claims : [],
+                  datasets: Array.isArray(paper.datasets) ? paper.datasets : []
+                }))
+                window.open("/mindmap", "_blank")
+              }}
+              className="mt-3 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 
+                         border border-blue-200 rounded text-xs font-medium 
+                         text-blue-700 transition-colors"
+            >
+              View Mindmap
+            </button>
           </div>
         ))}
 

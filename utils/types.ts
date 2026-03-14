@@ -92,13 +92,26 @@ export interface CrawlApiPaper {
 }
 
 export interface CrawlApiResponse {
-  query?: string;
-  discovered?: number;
-  saved?: number;
-  aggregated_extraction?: {
-    processed_count?: number;
-    papers?: CrawlApiPaper[];
+  query: string;
+  discovered: number;
+  saved: number;
+  failed: number;
+  skipped: number;
+  aggregated_extraction: {
+    papers: CrawlerPaper[];
   };
+}
+
+export interface CrawlerPaper {
+  paper_id: string;
+  title: string;
+  topic?: string;
+  abstract?: string;
+  methodology?: string;
+  results?: string;
+  conclusion?: string;
+  claims?: string[];
+  datasets?: string[];
 }
 
 export interface Phase1Data {

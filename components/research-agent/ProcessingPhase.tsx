@@ -79,7 +79,7 @@ export default function ProcessingPhase({
         {/* Status Footer */}
         <div className="mt-12 text-center text-sm text-textTertiary">
           <p>Processing stage {Math.min(completedStages.length + 1, 7)} of 7...</p>
-          {isCrawlLoading && <p className="mt-2">Waiting for crawl API 200 OK response...</p>}
+          {isCrawlLoading && <p className="mt-2"></p>}
           {allComplete && !isCrawlLoading && <p className="mt-2 text-green-600 font-semibold">Research complete. Transitioning...</p>}
         </div>
       </div>
